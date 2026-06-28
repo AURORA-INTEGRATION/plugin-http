@@ -189,8 +189,8 @@ def request(
         "params": params or None,
         "headers": h,
         "auth": httpx_auth,
-        "verify": verify,
-        "cert": cert,
+        "verify": verify or None,
+        "cert": cert or None,
     }
 
     if payload is not None and method.upper() not in ("GET", "HEAD"):
