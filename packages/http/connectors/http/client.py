@@ -117,6 +117,23 @@ def _coerce(body: Any) -> Any:
     return body
 
 
+# Content-types treated as text; everything else (pdf, images, octet-stream, …)
+# is returned as raw bytes so binary survives (the engine base64-encodes bytes
+# for JSON / set_response, instead of a lossy text decode).
+_TEXT_HINTS = ("text/", "xml", "html", "javascript", "x-www-form-urlencoded", "csv")
+
+
+def _response(resp: httpx.Response) -> dict[str, Any]:
+    ct = (resp.headers.get("content-type") or "").lower()
+    if "json" in ct:
+        body: Any = resp.json()
+    elif (not ct) or any(h in ct for h in _TEXT_HINTS):
+        body = resp.text
+    else:
+        body = resp.content  # binary → raw bytes
+    return {"status_code": resp.status_code, "body": body, "headers": dict(resp.headers)}
+
+
 def request(
     config: dict[str, Any],
     method: str,
@@ -144,9 +161,7 @@ def request(
     with httpx.Client(timeout=timeout, verify=verify, cert=cert) as cli:
         resp = cli.request(method.upper(), target, **kwargs)
 
-    ct = resp.headers.get("content-type", "")
-    out: Any = resp.json() if "json" in ct else resp.text
-    return {"status_code": resp.status_code, "body": out, "headers": dict(resp.headers)}
+    return _response(resp)
 
 
 def soap(
@@ -194,9 +209,7 @@ def graphql(
 
     with httpx.Client(timeout=timeout, verify=verify, cert=cert) as cli:
         resp = cli.post(target, json=payload, headers=h, auth=httpx_auth)
-    ct = resp.headers.get("content-type", "")
-    out: Any = resp.json() if "json" in ct else resp.text
-    return {"status_code": resp.status_code, "body": out, "headers": dict(resp.headers)}
+    return _response(resp)
 
 
 def test_connection(config: dict[str, Any]) -> dict[str, Any]:
