@@ -10,7 +10,11 @@ input:
   url:
     type: string
     required: false
-    description: URL assoluto dell'endpoint GraphQL (senza connettore basta questo), o path relativo a base_url col connettore.
+    description: URL assoluto dell'endpoint GraphQL. Se presente, ha priorità sulla base_url del connettore.
+  path:
+    type: string
+    required: false
+    description: Path concatenato a url o alla base_url del connettore.
   query:
     type: string
     required: true
@@ -56,6 +60,7 @@ ui:
   operation: graphql
   fields:
     - { name: url, label: URL, type: text }
+    - { name: path, label: Path, type: text }
     - { name: query, label: Query, type: code, language: graphql, required: true }
     - { name: variables, label: Variabili (JSON), type: code, language: json }
     - { name: headers, label: Headers, type: keyvalue }

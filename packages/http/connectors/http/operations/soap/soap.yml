@@ -10,7 +10,11 @@ input:
   url:
     type: string
     required: false
-    description: URL assoluto dell'endpoint SOAP (senza connettore basta questo), o path relativo a base_url col connettore.
+    description: URL assoluto dell'endpoint SOAP. Se presente, ha priorità sulla base_url del connettore.
+  path:
+    type: string
+    required: false
+    description: Path concatenato a url o alla base_url del connettore.
   soap_action:
     type: string
     required: false
@@ -56,6 +60,7 @@ ui:
   operation: soap
   fields:
     - { name: url, label: URL, type: text }
+    - { name: path, label: Path, type: text }
     - { name: soap_action, label: SOAPAction, type: text }
     - { name: body, label: Envelope XML, type: code, language: xml, required: true }
     - { name: headers, label: Headers, type: keyvalue }

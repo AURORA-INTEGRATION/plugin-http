@@ -12,7 +12,8 @@ def run(input: dict, context: dict) -> dict:
     return request(
         config,
         input.get("method", "GET"),
-        path=input.get("url", ""),
+        url=input.get("url", ""),
+        path=input.get("path", ""),
         params=input.get("params"),
         headers=input.get("headers"),
         body=input.get("body"),

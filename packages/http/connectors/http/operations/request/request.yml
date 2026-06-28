@@ -14,7 +14,11 @@ input:
   url:
     type: string
     required: false
-    description: URL assoluto (es. https://api.example.com/x). Senza connettore basta questo. Con un connettore può essere un path relativo a base_url.
+    description: URL assoluto (es. https://api.example.com/x). Se presente, ha priorità sulla base_url del connettore.
+  path:
+    type: string
+    required: false
+    description: Path concatenato a url (se presente) o alla base_url del connettore. Es. /clienti/42.
   params:
     type: object
     required: false
@@ -61,6 +65,7 @@ ui:
   fields:
     - { name: method, label: Metodo, type: select, options: [GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS], default: GET, required: true }
     - { name: url, label: URL, type: text }
+    - { name: path, label: Path, type: text }
     - { name: params, label: Query params, type: keyvalue }
     - { name: headers, label: Headers, type: keyvalue }
     - { name: body, label: Body (JSON), type: code, language: json }

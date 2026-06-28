@@ -69,9 +69,15 @@ def _prepare(config: dict[str, Any]):
     return base, headers, timeout
 
 
-def _full_url(base: str, path: str | None) -> str:
-    p = path or ""
-    return p if p.startswith(("http://", "https://")) else base + p
+def _resolve_url(base: str, url: str | None, path: str | None) -> str:
+    """Resolve the target URL.
+
+    - `url` present  → use it (ignores the connector base_url).
+    - else           → use the connector base_url (empty if no connector).
+    Then append `path` if present (concatenation).
+    """
+    chosen = (url or base or "")
+    return chosen + (path or "")
 
 
 def auth_from_input(inp: dict[str, Any]) -> dict[str, Any]:
@@ -114,6 +120,7 @@ def _coerce(body: Any) -> Any:
 def request(
     config: dict[str, Any],
     method: str,
+    url: str = "",
     path: str = "",
     params: dict[str, Any] | None = None,
     headers: dict[str, Any] | None = None,
@@ -122,7 +129,7 @@ def request(
 ) -> dict[str, Any]:
     base, base_headers, timeout = _prepare(config)
     verify, cert = _tls(config)
-    url = _full_url(base, path)
+    target = _resolve_url(base, url, path)
     h = {**base_headers, **(headers or {})}
     httpx_auth = _apply_auth(h, auth)
     payload = _coerce(body)
@@ -135,7 +142,7 @@ def request(
             kwargs["content"] = str(payload)
 
     with httpx.Client(timeout=timeout, verify=verify, cert=cert) as cli:
-        resp = cli.request(method.upper(), url, **kwargs)
+        resp = cli.request(method.upper(), target, **kwargs)
 
     ct = resp.headers.get("content-type", "")
     out: Any = resp.json() if "json" in ct else resp.text
@@ -144,6 +151,7 @@ def request(
 
 def soap(
     config: dict[str, Any],
+    url: str = "",
     path: str = "",
     soap_action: str | None = None,
     body: str = "",
@@ -153,19 +161,20 @@ def soap(
     """POST a raw SOAP/WSDL envelope. `body` is the full XML envelope."""
     base, base_headers, timeout = _prepare(config)
     verify, cert = _tls(config)
-    url = _full_url(base, path)
+    target = _resolve_url(base, url, path)
     h = {"Content-Type": "text/xml; charset=utf-8", **base_headers, **(headers or {})}
     if soap_action:
         h["SOAPAction"] = soap_action
     httpx_auth = _apply_auth(h, auth)
 
     with httpx.Client(timeout=timeout, verify=verify, cert=cert) as cli:
-        resp = cli.post(url, content=str(body or "").encode("utf-8"), headers=h, auth=httpx_auth)
+        resp = cli.post(target, content=str(body or "").encode("utf-8"), headers=h, auth=httpx_auth)
     return {"status_code": resp.status_code, "body": resp.text, "headers": dict(resp.headers)}
 
 
 def graphql(
     config: dict[str, Any],
+    url: str = "",
     path: str = "",
     query: str = "",
     variables: Any = None,
@@ -174,7 +183,7 @@ def graphql(
 ) -> dict[str, Any]:
     base, base_headers, timeout = _prepare(config)
     verify, cert = _tls(config)
-    url = _full_url(base, path)
+    target = _resolve_url(base, url, path)
     h = {**base_headers, **(headers or {})}
     httpx_auth = _apply_auth(h, auth)
 
@@ -184,7 +193,7 @@ def graphql(
         payload["variables"] = vars_
 
     with httpx.Client(timeout=timeout, verify=verify, cert=cert) as cli:
-        resp = cli.post(url, json=payload, headers=h, auth=httpx_auth)
+        resp = cli.post(target, json=payload, headers=h, auth=httpx_auth)
     ct = resp.headers.get("content-type", "")
     out: Any = resp.json() if "json" in ct else resp.text
     return {"status_code": resp.status_code, "body": out, "headers": dict(resp.headers)}
