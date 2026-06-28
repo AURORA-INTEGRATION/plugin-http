@@ -1,0 +1,71 @@
+kind: python_service
+id: common.connectors.http.request
+name: HTTP — Request
+script: connectors/http/operations/request/request.py
+input:
+  http_alias:
+    type: string
+    required: true
+    description: Nome dell'istanza connector di tipo http.
+  method:
+    type: string
+    required: true
+    description: Metodo HTTP (GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS).
+  path:
+    type: string
+    required: false
+    description: Path relativo alla base_url, oppure URL assoluto.
+  params:
+    type: object
+    required: false
+    description: Query string.
+  headers:
+    type: object
+    required: false
+    description: Header aggiuntivi.
+  body:
+    type: any
+    required: false
+    description: Corpo (oggetto/array → JSON; stringa accettata). Ignorato per GET/HEAD.
+  auth_type:
+    type: string
+    required: false
+    description: Tipo auth (none|bearer|basic|api_key) — fornito come input del flusso.
+  auth_value:
+    type: string
+    required: false
+    description: Token (bearer) o valore API key.
+  auth_username:
+    type: string
+    required: false
+    description: Username (basic).
+  auth_password:
+    type: string
+    required: false
+    description: Password (basic).
+  auth_header_name:
+    type: string
+    required: false
+    description: Nome header per la API key.
+output:
+  status_code:
+    type: integer
+  body:
+    type: any
+  headers:
+    type: object
+
+ui:
+  mode: form
+  operation: request
+  fields:
+    - { name: method, label: Metodo, type: select, options: [GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS], default: GET, required: true }
+    - { name: path, label: Path / URL, type: text }
+    - { name: params, label: Query params, type: keyvalue }
+    - { name: headers, label: Headers, type: keyvalue }
+    - { name: body, label: Body (JSON), type: code, language: json }
+    - { name: auth_type, label: Auth, type: select, options: [none, bearer, basic, api_key], default: none }
+    - { name: auth_value, label: Token / API key, type: text }
+    - { name: auth_username, label: Username (basic), type: text }
+    - { name: auth_password, label: Password (basic), type: text }
+    - { name: auth_header_name, label: Header API key, type: text }

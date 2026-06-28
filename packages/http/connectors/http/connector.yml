@@ -1,0 +1,40 @@
+kind: connector
+id: common.connectors.http
+type: http
+name: HTTP
+description: Generic HTTP connection (REST, SOAP/WSDL, GraphQL). Auth is passed per call as flow input, not stored here.
+icon: Globe
+fields:
+  base_url:
+    type: string
+    required: false
+    description: Optional base URL. Operation paths are relative to it; an absolute path overrides it.
+    placeholder: "https://api.example.com"
+  default_headers:
+    type: object
+    required: false
+    description: Headers sent on every request from this connector.
+  timeout:
+    type: integer
+    required: false
+    default: 30
+    description: Request timeout in seconds.
+  verify_tls:
+    type: boolean
+    required: false
+    default: true
+    description: Verify the TLS certificate.
+
+# ── Studio metadata (ignored by the engine validator) ──
+client: connectors/http/client.py
+operations:
+  - common.connectors.http.request
+  - common.connectors.http.soap
+  - common.connectors.http.graphql
+test:
+  description: GET on base_url (if set) to verify reachability.
+  client_fn: test_connection
+ui:
+  color: "#2563eb"
+  group: Integration
+  menu: HTTP

@@ -1,0 +1,66 @@
+kind: python_service
+id: common.connectors.http.graphql
+name: HTTP — GraphQL
+script: connectors/http/operations/graphql/graphql.py
+input:
+  http_alias:
+    type: string
+    required: true
+    description: Nome dell'istanza connector di tipo http.
+  path:
+    type: string
+    required: false
+    description: Endpoint GraphQL (relativo a base_url o URL assoluto).
+  query:
+    type: string
+    required: true
+    description: Query o mutation GraphQL.
+  variables:
+    type: any
+    required: false
+    description: Variabili (oggetto JSON; stringa JSON accettata).
+  headers:
+    type: object
+    required: false
+    description: Header aggiuntivi.
+  auth_type:
+    type: string
+    required: false
+    description: Tipo auth (none|bearer|basic|api_key) — input del flusso.
+  auth_value:
+    type: string
+    required: false
+    description: Token (bearer) o valore API key.
+  auth_username:
+    type: string
+    required: false
+    description: Username (basic).
+  auth_password:
+    type: string
+    required: false
+    description: Password (basic).
+  auth_header_name:
+    type: string
+    required: false
+    description: Nome header per la API key.
+output:
+  status_code:
+    type: integer
+  body:
+    type: any
+  headers:
+    type: object
+
+ui:
+  mode: form
+  operation: graphql
+  fields:
+    - { name: path, label: Endpoint, type: text }
+    - { name: query, label: Query, type: code, language: graphql, required: true }
+    - { name: variables, label: Variabili (JSON), type: code, language: json }
+    - { name: headers, label: Headers, type: keyvalue }
+    - { name: auth_type, label: Auth, type: select, options: [none, bearer, basic, api_key], default: none }
+    - { name: auth_value, label: Token / API key, type: text }
+    - { name: auth_username, label: Username (basic), type: text }
+    - { name: auth_password, label: Password (basic), type: text }
+    - { name: auth_header_name, label: Header API key, type: text }

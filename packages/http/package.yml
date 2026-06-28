@@ -1,0 +1,6 @@
+name: http
+version: 1.0.0
+description: HTTP connector for Aurora — one generic parametric request service (any method) plus SOAP/WSDL and GraphQL calls. Auth is provided per call as flow input.
+hidden: true   # connector-only package: services live under common.connectors.* — no empty tree node
+dependencies:
+  - httpx

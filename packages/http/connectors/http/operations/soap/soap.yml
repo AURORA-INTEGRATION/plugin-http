@@ -1,0 +1,66 @@
+kind: python_service
+id: common.connectors.http.soap
+name: HTTP — SOAP / WSDL
+script: connectors/http/operations/soap/soap.py
+input:
+  http_alias:
+    type: string
+    required: true
+    description: Nome dell'istanza connector di tipo http.
+  path:
+    type: string
+    required: false
+    description: Path/endpoint del servizio (relativo a base_url o URL assoluto).
+  soap_action:
+    type: string
+    required: false
+    description: Header SOAPAction.
+  body:
+    type: string
+    required: true
+    description: Envelope SOAP XML completo da inviare.
+  headers:
+    type: object
+    required: false
+    description: Header aggiuntivi.
+  auth_type:
+    type: string
+    required: false
+    description: Tipo auth (none|bearer|basic|api_key) — input del flusso.
+  auth_value:
+    type: string
+    required: false
+    description: Token (bearer) o valore API key.
+  auth_username:
+    type: string
+    required: false
+    description: Username (basic).
+  auth_password:
+    type: string
+    required: false
+    description: Password (basic).
+  auth_header_name:
+    type: string
+    required: false
+    description: Nome header per la API key.
+output:
+  status_code:
+    type: integer
+  body:
+    type: any
+  headers:
+    type: object
+
+ui:
+  mode: form
+  operation: soap
+  fields:
+    - { name: path, label: Endpoint, type: text }
+    - { name: soap_action, label: SOAPAction, type: text }
+    - { name: body, label: Envelope XML, type: code, language: xml, required: true }
+    - { name: headers, label: Headers, type: keyvalue }
+    - { name: auth_type, label: Auth, type: select, options: [none, bearer, basic, api_key], default: none }
+    - { name: auth_value, label: Token / API key, type: text }
+    - { name: auth_username, label: Username (basic), type: text }
+    - { name: auth_password, label: Password (basic), type: text }
+    - { name: auth_header_name, label: Header API key, type: text }
