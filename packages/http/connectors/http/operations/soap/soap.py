@@ -11,7 +11,7 @@ def run(input: dict, context: dict) -> dict:
     config = get_connector_config("http", alias) if alias else {}
     return soap(
         config,
-        path=input.get("path", ""),
+        path=input.get("url", ""),
         soap_action=input.get("soap_action"),
         body=input.get("body", ""),
         headers=input.get("headers"),

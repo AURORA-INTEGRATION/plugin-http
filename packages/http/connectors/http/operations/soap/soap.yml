@@ -7,10 +7,10 @@ input:
     type: string
     required: false
     description: Istanza connector http (base_url/headers/TLS). Opzionale — ometti e metti un URL assoluto in `path`.
-  path:
+  url:
     type: string
     required: false
-    description: Path/endpoint del servizio (relativo a base_url o URL assoluto).
+    description: URL assoluto dell'endpoint SOAP (senza connettore basta questo), o path relativo a base_url col connettore.
   soap_action:
     type: string
     required: false
@@ -55,7 +55,7 @@ ui:
   mode: form
   operation: soap
   fields:
-    - { name: path, label: Endpoint, type: text }
+    - { name: url, label: URL, type: text }
     - { name: soap_action, label: SOAPAction, type: text }
     - { name: body, label: Envelope XML, type: code, language: xml, required: true }
     - { name: headers, label: Headers, type: keyvalue }

@@ -11,7 +11,7 @@ def run(input: dict, context: dict) -> dict:
     config = get_connector_config("http", alias) if alias else {}
     return graphql(
         config,
-        path=input.get("path", ""),
+        path=input.get("url", ""),
         query=input.get("query", ""),
         variables=input.get("variables"),
         headers=input.get("headers"),

@@ -12,7 +12,7 @@ def run(input: dict, context: dict) -> dict:
     return request(
         config,
         input.get("method", "GET"),
-        path=input.get("path", ""),
+        path=input.get("url", ""),
         params=input.get("params"),
         headers=input.get("headers"),
         body=input.get("body"),

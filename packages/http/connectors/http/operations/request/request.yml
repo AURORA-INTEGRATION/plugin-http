@@ -11,10 +11,10 @@ input:
     type: string
     required: true
     description: Metodo HTTP (GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS).
-  path:
+  url:
     type: string
     required: false
-    description: Path relativo alla base_url, oppure URL assoluto.
+    description: URL assoluto (es. https://api.example.com/x). Senza connettore basta questo. Con un connettore può essere un path relativo a base_url.
   params:
     type: object
     required: false
@@ -60,7 +60,7 @@ ui:
   operation: request
   fields:
     - { name: method, label: Metodo, type: select, options: [GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS], default: GET, required: true }
-    - { name: path, label: Path / URL, type: text }
+    - { name: url, label: URL, type: text }
     - { name: params, label: Query params, type: keyvalue }
     - { name: headers, label: Headers, type: keyvalue }
     - { name: body, label: Body (JSON), type: code, language: json }
