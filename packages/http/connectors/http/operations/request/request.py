@@ -7,7 +7,8 @@ from connectors.http.client import auth_from_input, request
 
 
 def run(input: dict, context: dict) -> dict:
-    config = get_connector_config("http", input["http_alias"])
+    alias = input.get("http_alias")
+    config = get_connector_config("http", alias) if alias else {}
     return request(
         config,
         input.get("method", "GET"),

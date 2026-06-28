@@ -5,8 +5,8 @@ script: connectors/http/operations/request/request.py
 input:
   http_alias:
     type: string
-    required: true
-    description: Nome dell'istanza connector di tipo http.
+    required: false
+    description: Istanza connector http (base_url/headers/TLS). Opzionale — ometti e metti un URL assoluto in `path`.
   method:
     type: string
     required: true

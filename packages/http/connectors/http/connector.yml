@@ -24,6 +24,22 @@ fields:
     required: false
     default: true
     description: Verify the TLS certificate.
+  ca_cert:
+    type: string
+    required: false
+    multiline: true
+    description: Custom CA certificate to verify the server — PEM text or a file path. Optional.
+  client_cert:
+    type: string
+    required: false
+    multiline: true
+    description: Client certificate for mutual TLS (mTLS) — PEM text or a file path. Optional.
+  client_key:
+    type: string
+    required: false
+    multiline: true
+    secret: true
+    description: Client private key for mTLS (if separate from the cert) — PEM text or a file path.
 
 # ── Studio metadata (ignored by the engine validator) ──
 client: connectors/http/client.py
