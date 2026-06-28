@@ -5,9 +5,7 @@ One generic `request()` (any method) plus `soap()` and `graphql()` helpers.
 Authentication is NOT stored on the connector: each call receives an `auth`
 descriptor built from flow input (see `auth_from_input`).
 
-TLS: the connector config may carry a custom CA and/or a client certificate
-(mTLS), given either as a filesystem path or pasted PEM text — PEM is
-materialized to a cached temp file for httpx.
+TLS: supports custom CA and client certificates (mTLS).
 """
 from __future__ import annotations
 
@@ -54,13 +52,13 @@ def _materialize(pem_or_path: Any) -> str | None:
 
 
 def _tls(config: dict[str, Any]):
-    verify: Any = bool(config.get("verify_tls", True))
+    verify: Any = config.get("verify_tls", True)
 
     ca = _materialize(config.get("ca_cert"))
     if ca:
         verify = ca
 
-    cert: Any = None
+    cert = None
     cc = _materialize(config.get("client_cert"))
     ck = _materialize(config.get("client_key"))
 
@@ -83,9 +81,9 @@ def _prepare(config: dict[str, Any]):
 
 
 def _resolve_url(base: str, url: str | None, path: str | None) -> str:
-    chosen = (url or base or "")
+    chosen = (url or base or "").rstrip("/")
     if path:
-        return f"{chosen.rstrip('/')}/{path.lstrip('/')}"
+        return f"{chosen}/{path.lstrip('/')}"
     return chosen
 
 
@@ -136,32 +134,26 @@ _TEXT_HINTS = (
     "ecmascript",
     "x-www-form-urlencoded",
     "csv",
-    "yaml",
-    "yml",
 )
 
 
 def _response(resp: httpx.Response) -> dict[str, Any]:
     ct = (resp.headers.get("content-type") or "").lower()
 
-    try:
-        if "json" in ct:
-            body: Any = resp.json()
+    if "json" in ct:
+        body = resp.json()
 
-        elif any(h in ct for h in _TEXT_HINTS):
-            body = resp.text
+    elif any(h in ct for h in _TEXT_HINTS):
+        body = resp.text
 
-        else:
-            # IMPORTANT: PDF, images, zip, octet-stream → ALWAYS binary
-            body = resp.content
-
-    except Exception:
+    else:
+        # PDF, immagini, zip, binary -> SEMPRE bytes
         body = resp.content
 
     return {
         "status_code": resp.status_code,
-        "body": body,
         "headers": dict(resp.headers),
+        "body": body,
     }
 
 
@@ -186,11 +178,9 @@ def request(
     payload = _coerce(body)
 
     kwargs: dict[str, Any] = {
-        "params": params or None,
+        "params": params,
         "headers": h,
         "auth": httpx_auth,
-        "verify": verify or None,
-        "cert": cert or None,
     }
 
     if payload is not None and method.upper() not in ("GET", "HEAD"):
@@ -201,8 +191,8 @@ def request(
         else:
             kwargs["content"] = str(payload).encode("utf-8")
 
-    with httpx.Client(timeout=timeout) as cli:
-        resp = cli.request(method.upper(), target, **kwargs)
+    with httpx.Client(timeout=timeout, verify=verify, cert=cert) as client:
+        resp = client.request(method.upper(), target, **kwargs)
 
     return _response(resp)
 
@@ -221,14 +211,19 @@ def soap(
 
     target = _resolve_url(base, url, path)
 
-    h = {"Content-Type": "text/xml; charset=utf-8", **base_headers, **(headers or {})}
+    h = {
+        "Content-Type": "text/xml; charset=utf-8",
+        **base_headers,
+        **(headers or {}),
+    }
+
     if soap_action:
         h["SOAPAction"] = soap_action
 
     httpx_auth = _apply_auth(h, auth)
 
-    with httpx.Client(timeout=timeout, verify=verify, cert=cert) as cli:
-        resp = cli.post(
+    with httpx.Client(timeout=timeout, verify=verify, cert=cert) as client:
+        resp = client.post(
             target,
             content=str(body or "").encode("utf-8"),
             headers=h,
@@ -237,8 +232,8 @@ def soap(
 
     return {
         "status_code": resp.status_code,
-        "body": resp.text,
         "headers": dict(resp.headers),
+        "body": resp.text,
     }
 
 
@@ -265,8 +260,8 @@ def graphql(
     if vars_ is not None:
         payload["variables"] = vars_
 
-    with httpx.Client(timeout=timeout, verify=verify, cert=cert) as cli:
-        resp = cli.post(target, json=payload, headers=h, auth=httpx_auth)
+    with httpx.Client(timeout=timeout, verify=verify, cert=cert) as client:
+        resp = client.post(target, json=payload, headers=h, auth=httpx_auth)
 
     return _response(resp)
 
