@@ -1,4 +1,5 @@
-"""Shared HTTP client for the `http` connector.
+"""
+Shared HTTP client for the `http` connector.
 
 One generic `request()` (any method) plus `soap()` and `graphql()` helpers.
 Authentication is NOT stored on the connector: each call receives an `auth`
@@ -19,69 +20,76 @@ from typing import Any
 
 import httpx
 
+
 _cert_cache: dict[str, str] = {}
 _cert_lock = threading.Lock()
 
 
 def _materialize(pem_or_path: Any) -> str | None:
-    """Return a filesystem path for a cert given as PEM text or an existing path."""
     if not pem_or_path:
         return None
+
     s = str(pem_or_path)
+
     if "-----BEGIN" not in s:
-        return s  # already a path
+        return s
+
     key = hashlib.sha1(s.encode("utf-8")).hexdigest()[:16]
+
     cached = _cert_cache.get(key)
     if cached and os.path.exists(cached):
         return cached
+
     with _cert_lock:
         cached = _cert_cache.get(key)
         if cached and os.path.exists(cached):
             return cached
+
         fd, path = tempfile.mkstemp(suffix=".pem", prefix="aurora-cert-")
         with os.fdopen(fd, "w") as fh:
             fh.write(s)
+
         _cert_cache[key] = path
         return path
 
 
 def _tls(config: dict[str, Any]):
-    """Return (verify, cert) kwargs for httpx from the connector TLS config."""
     verify: Any = bool(config.get("verify_tls", True))
+
     ca = _materialize(config.get("ca_cert"))
     if ca:
-        verify = ca  # verify against custom CA bundle
+        verify = ca
+
     cert: Any = None
     cc = _materialize(config.get("client_cert"))
     ck = _materialize(config.get("client_key"))
+
     if cc:
         cert = (cc, ck) if ck else cc
+
     return verify, cert
 
 
 def _prepare(config: dict[str, Any]):
     base = (config.get("base_url") or "").rstrip("/")
     headers = dict(config.get("default_headers") or {})
+
     try:
         timeout = float(config.get("timeout") or 30)
     except (TypeError, ValueError):
         timeout = 30.0
+
     return base, headers, timeout
 
 
 def _resolve_url(base: str, url: str | None, path: str | None) -> str:
-    """Resolve the target URL.
-
-    - `url` present  → use it (ignores the connector base_url).
-    - else           → use the connector base_url (empty if no connector).
-    Then append `path` if present (concatenation).
-    """
     chosen = (url or base or "")
-    return chosen + (path or "")
+    if path:
+        return f"{chosen.rstrip('/')}/{path.lstrip('/')}"
+    return chosen
 
 
 def auth_from_input(inp: dict[str, Any]) -> dict[str, Any]:
-    """Collect the flat auth_* input fields into an auth descriptor."""
     return {
         "type": inp.get("auth_type"),
         "value": inp.get("auth_value"),
@@ -92,20 +100,22 @@ def auth_from_input(inp: dict[str, Any]) -> dict[str, Any]:
 
 
 def _apply_auth(headers: dict[str, Any], auth: dict[str, Any] | None):
-    """Mutate headers for bearer/api_key; return an httpx basic-auth tuple or None."""
     a = auth or {}
     t = (a.get("type") or "none").lower()
+
     if t == "bearer" and a.get("value"):
         headers["Authorization"] = f"Bearer {a['value']}"
+
     elif t == "api_key" and a.get("header_name"):
         headers[a["header_name"]] = a.get("value") or ""
+
     elif t == "basic":
         return (a.get("username") or "", a.get("password") or "")
+
     return None
 
 
 def _coerce(body: Any) -> Any:
-    """A JSON string (from the designer code editor) becomes a real object."""
     if isinstance(body, str):
         s = body.strip()
         if not s:
@@ -117,21 +127,42 @@ def _coerce(body: Any) -> Any:
     return body
 
 
-# Content-types treated as text; everything else (pdf, images, octet-stream, …)
-# is returned as raw bytes so binary survives (the engine base64-encodes bytes
-# for JSON / set_response, instead of a lossy text decode).
-_TEXT_HINTS = ("text/", "xml", "html", "javascript", "x-www-form-urlencoded", "csv")
+_TEXT_HINTS = (
+    "text/",
+    "json",
+    "xml",
+    "html",
+    "javascript",
+    "ecmascript",
+    "x-www-form-urlencoded",
+    "csv",
+    "yaml",
+    "yml",
+)
 
 
 def _response(resp: httpx.Response) -> dict[str, Any]:
     ct = (resp.headers.get("content-type") or "").lower()
-    if "json" in ct:
-        body: Any = resp.json()
-    elif (not ct) or any(h in ct for h in _TEXT_HINTS):
-        body = resp.text
-    else:
-        body = resp.content  # binary → raw bytes
-    return {"status_code": resp.status_code, "body": body, "headers": dict(resp.headers)}
+
+    try:
+        if "json" in ct:
+            body: Any = resp.json()
+
+        elif any(h in ct for h in _TEXT_HINTS):
+            body = resp.text
+
+        else:
+            # IMPORTANT: PDF, images, zip, octet-stream → ALWAYS binary
+            body = resp.content
+
+    except Exception:
+        body = resp.content
+
+    return {
+        "status_code": resp.status_code,
+        "body": body,
+        "headers": dict(resp.headers),
+    }
 
 
 def request(
@@ -146,19 +177,31 @@ def request(
 ) -> dict[str, Any]:
     base, base_headers, timeout = _prepare(config)
     verify, cert = _tls(config)
+
     target = _resolve_url(base, url, path)
+
     h = {**base_headers, **(headers or {})}
     httpx_auth = _apply_auth(h, auth)
+
     payload = _coerce(body)
 
-    kwargs: dict[str, Any] = {"params": params or None, "headers": h, "auth": httpx_auth}
+    kwargs: dict[str, Any] = {
+        "params": params or None,
+        "headers": h,
+        "auth": httpx_auth,
+        "verify": verify,
+        "cert": cert,
+    }
+
     if payload is not None and method.upper() not in ("GET", "HEAD"):
         if isinstance(payload, (dict, list)):
             kwargs["json"] = payload
+        elif isinstance(payload, (bytes, bytearray)):
+            kwargs["content"] = payload
         else:
-            kwargs["content"] = str(payload)
+            kwargs["content"] = str(payload).encode("utf-8")
 
-    with httpx.Client(timeout=timeout, verify=verify, cert=cert) as cli:
+    with httpx.Client(timeout=timeout) as cli:
         resp = cli.request(method.upper(), target, **kwargs)
 
     return _response(resp)
@@ -173,18 +216,30 @@ def soap(
     headers: dict[str, Any] | None = None,
     auth: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """POST a raw SOAP/WSDL envelope. `body` is the full XML envelope."""
     base, base_headers, timeout = _prepare(config)
     verify, cert = _tls(config)
+
     target = _resolve_url(base, url, path)
+
     h = {"Content-Type": "text/xml; charset=utf-8", **base_headers, **(headers or {})}
     if soap_action:
         h["SOAPAction"] = soap_action
+
     httpx_auth = _apply_auth(h, auth)
 
     with httpx.Client(timeout=timeout, verify=verify, cert=cert) as cli:
-        resp = cli.post(target, content=str(body or "").encode("utf-8"), headers=h, auth=httpx_auth)
-    return {"status_code": resp.status_code, "body": resp.text, "headers": dict(resp.headers)}
+        resp = cli.post(
+            target,
+            content=str(body or "").encode("utf-8"),
+            headers=h,
+            auth=httpx_auth,
+        )
+
+    return {
+        "status_code": resp.status_code,
+        "body": resp.text,
+        "headers": dict(resp.headers),
+    }
 
 
 def graphql(
@@ -198,23 +253,33 @@ def graphql(
 ) -> dict[str, Any]:
     base, base_headers, timeout = _prepare(config)
     verify, cert = _tls(config)
+
     target = _resolve_url(base, url, path)
+
     h = {**base_headers, **(headers or {})}
     httpx_auth = _apply_auth(h, auth)
 
     payload: dict[str, Any] = {"query": query}
+
     vars_ = _coerce(variables)
     if vars_ is not None:
         payload["variables"] = vars_
 
     with httpx.Client(timeout=timeout, verify=verify, cert=cert) as cli:
         resp = cli.post(target, json=payload, headers=h, auth=httpx_auth)
+
     return _response(resp)
 
 
 def test_connection(config: dict[str, Any]) -> dict[str, Any]:
     base, _, _ = _prepare(config)
+
     if not base:
         return {"ok": True, "note": "no base_url configured"}
+
     r = request(config, "GET", "")
-    return {"ok": r["status_code"] < 500, "status_code": r["status_code"]}
+
+    return {
+        "ok": r["status_code"] < 500,
+        "status_code": r["status_code"],
+    }
