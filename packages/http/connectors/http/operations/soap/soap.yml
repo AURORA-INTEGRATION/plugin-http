@@ -21,8 +21,20 @@ input:
     description: Header SOAPAction.
   body:
     type: string
-    required: true
-    description: Envelope SOAP XML completo da inviare.
+    required: false
+    description: Envelope SOAP XML completo già pronto. In alternativa usa operation+namespace+payload per costruirlo a runtime.
+  operation:
+    type: string
+    required: false
+    description: Nome dell'elemento richiesta (wrapper SOAP). Se presente e `body` è vuoto, l'envelope viene costruito da payload.
+  namespace:
+    type: string
+    required: false
+    description: Target namespace dell'operazione (xmlns dell'elemento richiesta).
+  payload:
+    type: any
+    required: false
+    description: Dati strutturati della richiesta (object). Marshalled a XML — gli array ripetono l'elemento, gli object annidano.
   headers:
     type: object
     required: false
