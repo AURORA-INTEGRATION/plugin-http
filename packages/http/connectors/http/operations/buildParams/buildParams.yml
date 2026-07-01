@@ -1,0 +1,24 @@
+kind: python_service
+id: common.connectors.http.buildParams
+name: HTTP — Build Params
+script: connectors/http/operations/buildParams/buildParams.py
+input:
+  params:
+    type: object
+    required: false
+    description: Coppie query param di base.
+  extra:
+    type: object
+    required: false
+    description: Param aggiuntivi — sovrascrivono `params`. I valori None vengono scartati.
+output:
+  params:
+    type: object
+    description: Oggetto query param pronto — passalo all'input `params` di request.
+
+ui:
+  mode: form
+  operation: buildParams
+  fields:
+    - { name: params, label: Query params, type: keyvalue }
+    - { name: extra, label: Param extra (override), type: keyvalue }

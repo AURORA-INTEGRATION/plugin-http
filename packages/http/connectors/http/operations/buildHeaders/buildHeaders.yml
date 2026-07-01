@@ -1,0 +1,24 @@
+kind: python_service
+id: common.connectors.http.buildHeaders
+name: HTTP — Build Headers
+script: connectors/http/operations/buildHeaders/buildHeaders.py
+input:
+  headers:
+    type: object
+    required: false
+    description: Coppie header di base.
+  extra:
+    type: object
+    required: false
+    description: Header aggiuntivi — sovrascrivono `headers`. I valori None vengono scartati.
+output:
+  headers:
+    type: object
+    description: Oggetto header pronto — passalo all'input `headers` di request/soap/graphql.
+
+ui:
+  mode: form
+  operation: buildHeaders
+  fields:
+    - { name: headers, label: Headers, type: keyvalue }
+    - { name: extra, label: Header extra (override), type: keyvalue }

@@ -1,0 +1,44 @@
+kind: python_service
+id: common.connectors.http.buildAuth
+name: HTTP — Build Auth
+script: connectors/http/operations/buildAuth/buildAuth.py
+input:
+  type:
+    type: string
+    required: true
+    description: Tipo auth (none|bearer|basic|api_key|custom|digest).
+  token:
+    type: string
+    required: false
+    description: Token (bearer).
+  username:
+    type: string
+    required: false
+    description: Username (basic|digest).
+  password:
+    type: string
+    required: false
+    description: Password (basic|digest).
+  header_name:
+    type: string
+    required: false
+    description: Nome header (api_key|custom).
+  value:
+    type: string
+    required: false
+    description: Valore header (api_key|custom).
+output:
+  auth:
+    type: object
+    description: Oggetto auth validato — passalo all'input `auth` di request/soap/graphql.
+
+ui:
+  mode: form
+  operation: buildAuth
+  fields:
+    - { name: type, label: Tipo, type: select, options: [none, bearer, basic, api_key, custom, digest], default: none, required: true }
+    - { name: token, label: Token (bearer), type: text }
+    - { name: username, label: Username (basic/digest), type: text }
+    - { name: password, label: Password (basic/digest), type: text }
+    - { name: header_name, label: Nome header (api_key/custom), type: text }
+    - { name: value, label: Valore (api_key/custom), type: text }

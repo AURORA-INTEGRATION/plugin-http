@@ -47,6 +47,10 @@ operations:
   - common.connectors.http.request
   - common.connectors.http.soap
   - common.connectors.http.graphql
+  # Helper services (no HTTP call) — build inputs for the operations above.
+  - common.connectors.http.buildAuth
+  - common.connectors.http.buildHeaders
+  - common.connectors.http.buildParams
 test:
   description: GET on base_url (if set) to verify reachability.
   client_fn: test_connection

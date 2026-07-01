@@ -1,6 +1,6 @@
 name: http
-version: 1.1.0
-description: HTTP connector for Aurora — one generic parametric request service (any method) plus SOAP/WSDL and GraphQL calls. Single validated `auth` object (bearer/basic/api_key/custom/digest), optional raise_for_status with structured errors, and header/param/redaction utils. Auth is provided per call as flow input.
+version: 1.2.0
+description: HTTP connector for Aurora — one generic parametric request service (any method) plus SOAP/WSDL and GraphQL calls, and helper services (buildAuth/buildHeaders/buildParams). Single validated `auth` object (bearer/basic/api_key/custom/digest), optional raise_for_status with structured errors. Auth is provided per call as flow input.
 hidden: true   # connector-only package: services live under common.connectors.* — no empty tree node
 dependencies:
   - httpx

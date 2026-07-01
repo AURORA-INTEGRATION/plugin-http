@@ -12,6 +12,14 @@ connector.
 - `soap` — POST a raw SOAP/WSDL XML envelope (+ optional SOAPAction).
 - `graphql` — POST a query/mutation with variables.
 
+## Helper services (flow-callable)
+No HTTP call — they build the inputs for the operations above, usable as nodes in
+the flow builder:
+- `buildAuth` — assemble + **validate** the `auth` object (errors on missing
+  fields, e.g. bearer without token). Output `auth` → feed the `auth` input.
+- `buildHeaders` — merge header pairs, drop `None`, stringify. Output `headers`.
+- `buildParams` — merge query-param pairs, drop `None` (keeps value types). Output `params`.
+
 ## Auth (flow input)
 Pass a single **`auth` object** (recommended). It is **validated** before the
 request — a type with missing fields raises a clear error instead of silently
