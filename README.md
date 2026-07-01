@@ -13,13 +13,44 @@ connector.
 - `graphql` — POST a query/mutation with variables.
 
 ## Auth (flow input)
-Each operation takes flat `auth_*` inputs (bind them to `${input.*}` / globals):
-`auth_type` (none|bearer|basic|api_key), `auth_value` (token/api-key),
-`auth_username`, `auth_password`, `auth_header_name`.
+Pass a single **`auth` object** (recommended). It is **validated** before the
+request — a type with missing fields raises a clear error instead of silently
+sending an unauthenticated call.
+
+| `type`     | required fields              |
+|------------|------------------------------|
+| `none`     | — (anonymous)                |
+| `bearer`   | `token`                      |
+| `basic`    | `username`, `password`       |
+| `digest`   | `username`, `password`       |
+| `api_key`  | `header_name`, `value`       |
+| `custom`   | `header_name`, `value`       |
+
+```yaml
+auth: { type: bearer, token: "${input.token}" }
+auth: { type: basic,  username: "${globals.user}", password: "${globals.pass}" }
+auth: { type: api_key, header_name: X-Api-Key, value: "${input.key}" }
+```
+
+**Legacy:** the flat `auth_type` / `auth_value` / `auth_username` / `auth_password`
+/ `auth_header_name` inputs still work (pre-1.1 flows), now also covering
+`custom` and `digest`.
+
+## Error handling
+Set **`raise_for_status: true`** to turn a `>= 400` response into a structured
+`HttpError` (method, url, status, short body) instead of a normal result. Transport
+failures (connect/timeout) always raise `HttpError` (status `None`). Default is
+`false` — the call returns `{status_code, headers, body}` as before.
+
+## Utils (`connectors.http.utils`)
+For `python_service` authors: `build_headers(...)` / `build_params(...)` (merge +
+drop `None` + stringify), `redact_headers(...)` (mask credential values as `***`
+before logging), and auth builders `bearer()`, `basic()`, `digest()`,
+`api_key()`, `custom()`.
 
 ## Connector fields
 `base_url` (optional; paths are relative, absolute path overrides), `default_headers`,
-`timeout`, `verify_tls`. No credentials.
+`timeout`, `verify_tls`, plus mTLS (`ca_cert`, `client_cert`, `client_key`). No credentials.
 
 ## Install
 Git Source → `https://github.com/AURORA-INTEGRATION/plugin-http`, branch `main`,

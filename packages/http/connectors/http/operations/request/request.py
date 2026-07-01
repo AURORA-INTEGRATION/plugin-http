@@ -18,4 +18,5 @@ def run(input: dict, context: dict) -> dict:
         headers=input.get("headers"),
         body=input.get("body"),
         auth=auth_from_input(input),
+        raise_for_status=bool(input.get("raise_for_status")),
     )

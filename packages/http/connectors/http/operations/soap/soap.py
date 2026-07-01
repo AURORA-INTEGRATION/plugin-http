@@ -65,4 +65,5 @@ def run(input: dict, context: dict) -> dict:
         body=body,
         headers=input.get("headers"),
         auth=auth_from_input(input),
+        raise_for_status=bool(input.get("raise_for_status")),
     )

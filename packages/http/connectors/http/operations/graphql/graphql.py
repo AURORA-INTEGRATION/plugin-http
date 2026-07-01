@@ -17,4 +17,5 @@ def run(input: dict, context: dict) -> dict:
         variables=input.get("variables"),
         headers=input.get("headers"),
         auth=auth_from_input(input),
+        raise_for_status=bool(input.get("raise_for_status")),
     )

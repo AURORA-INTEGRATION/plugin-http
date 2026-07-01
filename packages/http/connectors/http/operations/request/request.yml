@@ -31,26 +31,37 @@ input:
     type: any
     required: false
     description: Corpo (oggetto/array → JSON; stringa accettata). Ignorato per GET/HEAD.
+  auth:
+    type: object
+    required: false
+    description: >-
+      Oggetto auth unico (consigliato). Campi: type (none|bearer|basic|api_key|custom|digest),
+      token (bearer), username+password (basic|digest), header_name+value (api_key|custom).
+      Validato: se il tipo richiede campi mancanti → errore. Alternativa ai campi auth_* legacy.
+  raise_for_status:
+    type: boolean
+    required: false
+    description: Se true, uno status >= 400 solleva un errore strutturato (HttpError) invece di tornare la response.
   auth_type:
     type: string
     required: false
-    description: Tipo auth (none|bearer|basic|api_key) — fornito come input del flusso.
+    description: "[legacy] Tipo auth (none|bearer|basic|api_key|custom|digest). Preferisci l'oggetto `auth`."
   auth_value:
     type: string
     required: false
-    description: Token (bearer) o valore API key.
+    description: "[legacy] Token (bearer) o valore API key / custom header."
   auth_username:
     type: string
     required: false
-    description: Username (basic).
+    description: "[legacy] Username (basic|digest)."
   auth_password:
     type: string
     required: false
-    description: Password (basic).
+    description: "[legacy] Password (basic|digest)."
   auth_header_name:
     type: string
     required: false
-    description: Nome header per la API key.
+    description: "[legacy] Nome header per api_key / custom."
 output:
   status_code:
     type: integer
@@ -69,8 +80,9 @@ ui:
     - { name: params, label: Query params, type: keyvalue }
     - { name: headers, label: Headers, type: keyvalue }
     - { name: body, label: Body (JSON), type: code, language: json }
-    - { name: auth_type, label: Auth, type: select, options: [none, bearer, basic, api_key], default: none }
-    - { name: auth_value, label: Token / API key, type: text }
-    - { name: auth_username, label: Username (basic), type: text }
-    - { name: auth_password, label: Password (basic), type: text }
-    - { name: auth_header_name, label: Header API key, type: text }
+    - { name: raise_for_status, label: Errore su HTTP >= 400, type: checkbox, default: false }
+    - { name: auth_type, label: Auth, type: select, options: [none, bearer, basic, api_key, custom, digest], default: none }
+    - { name: auth_value, label: Token / API key / valore, type: text }
+    - { name: auth_username, label: Username (basic/digest), type: text }
+    - { name: auth_password, label: Password (basic/digest), type: text }
+    - { name: auth_header_name, label: Nome header (api_key/custom), type: text }
